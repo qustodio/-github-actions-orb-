@@ -1,0 +1,33 @@
+description: >
+  Triggers a repository_dispatch event within GitHub Actions for the desired repo.
+  event_type, repo_name and github_personal_access_token fields must be provided.
+
+parameters:
+  repo_name:
+    type: string
+    description: "The organization and repo name to trigger the event for (ex. `qustodio/hello-world`)"
+  event_type:
+    type: string
+    description: "The ['event_type'](https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#create-a-repository-dispatch-event) parameter to send"
+  github_personal_access_token:
+    type: env_var_name
+    description: "The environment variable name containing a GitHub 'Personal Access Token' (PAT) with the `repo` scope"
+  metadata:
+    type: string
+    description: "Send any payload through this field. For example: `{'version': '0.1.0'}`"
+    default: "null"
+
+steps:
+  - run:
+      name: "Set enviroment variables"
+      command: |
+         echo 'export PRIVATE_GH_TOKEN=$(echo $<< parameters.github_personal_access_token >>)' >> "$BASH_ENV"
+         source "$BASH_ENV"
+  - run:
+      environment:
+        - REPO_NAME: << parameters.repo_name >>
+        - EVENT_TYPE: << parameters.event_type >>
+        - METADATA: << parameters.metadata >>
+      when: always
+      name: Bundle build info into webhook payload
+      command: << include(scripts/send-payload.sh) >>
