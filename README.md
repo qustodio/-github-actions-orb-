@@ -1,39 +1,97 @@
-# Orb Template
+# github-actions-orb <!-- omit in TOC -->
 
+A [CircleCI orb](https://circleci.com/orbs/) for interacting with [GitHub Actions](https://github.com/features/actions).
 
-[![CircleCI Build Status](https://circleci.com/gh/qustodio/github-actions-orb.svg?style=shield "CircleCI Build Status")](https://circleci.com/gh/qustodio/github-actions-orb) [![CircleCI Orb Version](https://badges.circleci.com/orbs/qustodio-github/github-actions-orb.svg)](https://circleci.com/orbs/registry/orb/qustodio-github/github-actions-orb) [![GitHub License](https://img.shields.io/badge/license-MIT-lightgrey.svg)](https://raw.githubusercontent.com/qustodio/github-actions-orb/master/LICENSE) [![CircleCI Community](https://img.shields.io/badge/community-CircleCI%20Discuss-343434.svg)](https://discuss.circleci.com/c/ecosystem/orbs)
+Check out [this orb](https://circleci.com/developer/orbs/orb/qustodio/github-actions) in the CircleCI Orb Registry.
 
+- [Quick Start](#quick-start)
+- [Authentication](#authentication)
+- [Commands](#commands)
+  - [repository_dispatch](#repository_dispatch)
+    - [Parameters](#parameters)
+    - [Webhook event `client_payload`](#webhook-event-client_payload)
+      - [Example](#example)
 
+## Quick Start
 
-A project template for Orbs.
+Include the orb in the root of your CircleCI config:
 
-This repository is designed to be automatically ingested and modified by the CircleCI CLI's `orb init` command.
+```yaml
+orbs:
+  github-actions: qustodio/github-actions-orb@0.1.4 # Make sure to update this to the latest version: https://circleci.com/developer/orbs/orb/movermeyer/github-actions
+```
 
-_**Edit this area to include a custom title and description.**_
+Then call commands in the `steps` section of your CircleCI config:
 
----
+```yaml
+steps:
+  - github-actions/repository_dispatch:
+      repo_name: "<user_name>/<user_repo>" # Your GitHub organization name + repo name
+      event_type: "build_complete" # Arbitrary string that your GitHub Actions will filter on
+```
 
-## Resources
+## Authentication
 
-[CircleCI Orb Registry Page](https://circleci.com/orbs/registry/orb/qustodio-github/github-actions-orb) - The official registry page of this orb for all versions, executors, commands, and jobs described.
+Commands need to authenticate with GitHub in order to work.
 
-[CircleCI Orb Docs](https://circleci.com/docs/2.0/orb-intro/#section=configuration) - Docs for using, creating, and publishing CircleCI Orbs.
+1. Create a [new GitHub Personal Access Token](https://github.com/settings/tokens/new) with the `repo` scope enabled.
+  * Name it something meaningful. Perhaps `circleci-github-actions orb access token` or similar?
+  * Make sure to copy down the access token it generates.
+2. Create a new CircleCI environment variable, either on the CircleCI project, or within a CircleCI scope used by the CircleCI project.
+  * Name it `GITHUB_PERSONAL_ACCESS_TOKEN` and copy the access token that GitHub generated in the last step.
+    * If for some reason your project/scope already has a `GITHUB_PERSONAL_ACCESS_TOKEN`, use a different name instead. You will use that new name to override the `github_personal_access_token` parameter when calling commands.
 
-### How to Contribute
+## Commands
 
-We welcome [issues](https://github.com/qustodio/github-actions-orb/issues) to and [pull requests](https://github.com/qustodio/github-actions-orb/pulls) against this repository!
+There is only a single command implemented so far.
 
-### How to Publish An Update
-1. Merge pull requests with desired changes to the main branch.
-    - For the best experience, squash-and-merge and use [Conventional Commit Messages](https://conventionalcommits.org/).
-2. Find the current version of the orb.
-    - You can run `circleci orb info qustodio-github/github-actions-orb | grep "Latest"` to see the current version.
-3. Create a [new Release](https://github.com/qustodio/github-actions-orb/releases/new) on GitHub.
-    - Click "Choose a tag" and _create_ a new [semantically versioned](http://semver.org/) tag. (ex: v1.0.0)
-      - We will have an opportunity to change this before we publish if needed after the next step.
-4.  Click _"+ Auto-generate release notes"_.
-    - This will create a summary of all of the merged pull requests since the previous release.
-    - If you have used _[Conventional Commit Messages](https://conventionalcommits.org/)_ it will be easy to determine what types of changes were made, allowing you to ensure the correct version tag is being published.
-5. Now ensure the version tag selected is semantically accurate based on the changes included.
-6. Click _"Publish Release"_.
-    - This will push a new tag and trigger your publishing pipeline on CircleCI.
+### repository_dispatch
+
+This sends a [`repository_dispatch`](https://docs.github.com/en/free-pro-team@latest/actions/reference/events-that-trigger-workflows#repository_dispatch) event webhook to GitHub Actions.
+
+#### Parameters
+
+| Parameter                    | Description                                                                                                                                                                                            | Required | Default                        | Example               |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- | ------------------------------ | --------------------- |
+| repo_name                    | The organization and repo name to trigger the `repository_dispatch` event for                                                                                                                          | Yes      | N/A                            | `qustodio/hello-world` |
+| event_type                   | The ['event_type'](https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#create-a-repository-dispatch-event) parameter to send. Arbitry string that GitHub Actions can use to filter on | Yes      | N/A                            | `qustodio/hello-world` |
+| github_personal_access_token | The name of the environment variable containing the GitHub Personal Access Token. See [Authentication](#authentication)                                                                                | No       | N/A                            |  `GITHUB_TOKEN`       |
+| metadata                     | Add any metadata that you should provide to GitHub Action                                                                                                                                              | No       | N/A                            | `{ "field_1": "value" }` |
+
+#### Webhook event `client_payload`
+
+By default, the [`client_payload`]((https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#create-a-repository-dispatch-event)) sent to GitHub contains most useful information about the build.
+
+These are simply copied from the various CircleCI environment variables.
+
+| `client_payload` | CircleCI environment variable |
+| ---------------- | ----------------------------- |
+| `build_num`      | `CIRCLE_BUILD_NUM`            |
+| `branch`         | `CIRCLE_BRANCH`               |
+| `username`       | `CIRCLE_USERNAME`             |
+| `job`            | `CIRCLE_JOB`                  |
+| `build_url`      | `CIRCLE_BUILD_URL`            |
+| `vcs_revision`   | `CIRCLE_SHA1`                 |
+| `reponame`       | `CIRCLE_PROJECT_REPONAME`     |
+| `workflow_id`    | `CIRCLE_WORKFLOW_ID`          |
+| `pull_request`   | `CI_PULL_REQUEST`             |
+| `metadata`       | `null`                        |
+
+##### Example
+
+```json
+{
+  "event_type":"wheel_build_complete",
+  "client_payload": {
+    "build_num": "35",
+    "branch": "refs/tags/v0.0.14",
+    "username": "qustodio",
+    "job": "notify_github",
+    "build_url": "https://circleci.com/gh/qustodio/github-actions-orb/35",
+    "vcs_revision": "46f3ff30f669ec61194f6010d4a8adf98a71b29a",
+    "reponame": "octokit_test",
+    "workflow_id": "c1b6618e-a6ea-4ce7-a907-74763b5bdd31",
+    "metadata": { "field_1": "value" }
+  },
+}
+```
