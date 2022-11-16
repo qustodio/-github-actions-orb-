@@ -15,13 +15,29 @@ jobs:
       - image: cimg/base:current
     steps:
       - checkout
-      # Run your orb's commands to validate them.
-      - github-actions-orb/greet
+      # Implement your tests here
+      - run:
+          name: 'Check token'
+          command: echo $P_GITHUB_TOKEN
+      # Check repostiroy_dispatch works providing all parameters
+      - github-actions-orb/repository_dispatch:
+          repo_name: "qustodio/github-actions-orb" # Your GitHub organization name + repo name
+          event_type: "build_finished" # Arbitrary string that your GitHub Actions will filter on
+          github_personal_access_token: P_GITHUB_TOKEN
+          metadata: '{"version": "0.1.0"}'
+      # Metadata should be optional
+      - github-actions-orb/repository_dispatch:
+          repo_name: "qustodio/github-actions-orb" # Your GitHub organization name + repo name
+          event_type: "metadata_is_optional" # Arbitrary string that your GitHub Actions will filter on
+          github_personal_access_token: P_GITHUB_TOKEN
+
+
 workflows:
   test-deploy:
     jobs:
       # Make sure to include "filters: *filters" in every test job you want to run as part of your deployment.
       - command-tests:
+          context: orb-publishing
           filters: *filters
       - orb-tools/pack:
           filters: *filters

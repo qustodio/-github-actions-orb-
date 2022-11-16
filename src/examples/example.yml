@@ -1,13 +1,25 @@
 description: >
-  Sample example description.
-# Provide a use-case based example for using this orb.
-# Everything in the `usage` section will be displayed in the orb registry.
-# Comments are not retained.
+  This is an example on how to use github-actions-orb on CircleCI.
+  Providing some extra metadata and the event_type.
 usage:
   version: 2.1
   orbs:
-    <orb-name>: <namespace>/<orb-name>@1.2.3
+    github-actions-orb: qustodio-github/github-actions-orb@v0.1.0
+
+  jobs:
+    say-hello-to-github:
+      docker:
+        - image: cimg/base:stable
+      steps:
+        - github-actions/repository_dispatch:
+            repo_name: "<user>/<your-repo-name>" # Your GitHub organization name + repo name
+            event_type: "build_finished" # Arbitrary string that your GitHub Actions will filter on
+            github_personal_access_token: "GITHUB_PERSONAL_TOKEN"
+            metadata: '{"version": "0.1.0"}'
+
+  # Invoke jobs via workflows
+  # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
   workflows:
-    use-my-orb:
+    release:
       jobs:
-        - <orb-name>/<job-name>
+        - say-hello-to-github

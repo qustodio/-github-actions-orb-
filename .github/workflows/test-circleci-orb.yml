@@ -1,0 +1,17 @@
+name: "Test CircleCI Orb"
+
+on:
+  repository_dispatch:
+    types: [build_finished]
+
+jobs:
+  build_finished:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Buld number: ${{ github.event.client_payload.build_num }}"
+          echo "Build url: ${{ github.event.client_payload.build_url }}"
+          echo "Build commit: ${{ github.event.client_payload.vcs_revision }}"
+          echo "Build metadata: ${{ github.event.client_payload.metadata }}"
+          echo "Version provided by metadata: ${{ fromJSON(github.event.client_payload.metadata).version }}"
+
